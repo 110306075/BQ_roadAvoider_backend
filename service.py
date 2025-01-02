@@ -7,6 +7,7 @@ from google.oauth2 import service_account
 import requests
 import os
 from dotenv import load_dotenv
+import pytz
 
 # Load environment variables
 load_dotenv()
@@ -52,6 +53,8 @@ def get_checkpoints(step_points, num_points=3):
 
 
 def predict_route_risks(route, api_key):
+    taipei_tz = pytz.timezone("Asia/Taipei")
+
     risks = []
     client = bigquery.Client(credentials=credentials, project=project_id)
 
@@ -60,7 +63,7 @@ def predict_route_risks(route, api_key):
             step_points = googlemaps.convert.decode_polyline(step["polyline"]["points"])
             checkpoints = get_checkpoints(step_points)
 
-            now = datetime.now()
+            now = datetime.now(taipei_tz)
             current_hour = now.hour
             day_of_week = now.isoweekday()
 
@@ -108,12 +111,7 @@ def predict_route_risks(route, api_key):
 
             risk_score = 0
             for r in results:
-                # weighted_score = (
-                #     r.prob_severe * risk_weights['severe'] +
-                #     r.prob_moderate * risk_weights['moderate'] +
-                #     r.prob_minor * risk_weights['minor']
-                # )
-                # risk_score += weighted_score
+
                 prob_severe = r.prob_severe["prob"]
                 prob_moderate = r.prob_moderate["prob"]
                 prob_minor = r.prob_minor["prob"]
